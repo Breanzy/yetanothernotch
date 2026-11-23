@@ -272,13 +272,20 @@ final class NotchWindowController {
     /// The island becomes the key window while open (so clicks, hover and the search field work
     /// right away). A non-activating panel keeps keyboard focus until something else takes it,
     /// so without this, typing after the island closed went nowhere until you clicked your app.
-    /// Briefly ordering the panel out hands focus back to the active app's window.
+    ///
+    /// When Islet's key window goes away and Islet has no other window that can take focus,
+    /// macOS gives the keyboard back to the app you're using. Hiding the island itself did that
+    /// but made anything showing in the closed notch (timer, album art) blink, so instead an
+    /// invisible 1×1 window takes focus for a moment and is the one that gets hidden.
+    private lazy var focusSink = FocusSinkPanel()
+
     private func returnKeyboardFocus() {
         guard !viewModel.isExpanded, panel.isKeyWindow else { return }
-        NSAnimationContext.beginGrouping()
-        NSAnimationContext.current.duration = 0
-        panel.orderOut(nil)
-        panel.orderFrontRegardless()
-        NSAnimationContext.endGrouping()
+        panel.allowsKey = false // so macOS doesn't hand focus straight back to the island
+        focusSink.setFrameOrigin(NSPoint(x: screen.frame.minX, y: screen.frame.minY))
+        focusSink.orderFrontRegardless()
+        focusSink.makeKey()
+        focusSink.orderOut(nil)
+        DispatchQueue.main.async { [weak self] in self?.panel.allowsKey = true }
     }
 }
