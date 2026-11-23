@@ -118,9 +118,8 @@ struct ControlButton: View {
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: symbol)
+            SymbolImage(symbol) // play ⇄ pause crossfades (see SymbolImage)
                 .font(.system(size: size, weight: .semibold))
-                .contentTransition(.symbolEffect(.replace))
                 .frame(width: size + 16, height: size + 12)
                 .background(Circle().fill(Color.white.opacity(hovering ? 0.12 : 0)))
                 .contentShape(Circle()) // clickable across the whole circle, not just the glyph

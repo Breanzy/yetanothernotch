@@ -13,7 +13,7 @@ struct EnlargeButton: View {
             if enlarging { onEnlarge() }
             withAnimation(NotchViewModel.openAnimation) { vm.isEnlarged = enlarging }
         } label: {
-            Image(systemName: vm.isEnlarged ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right")
+            SymbolImage(vm.isEnlarged ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right")
                 .font(.system(size: 9, weight: .bold))
                 .frame(width: 22, height: 22)
                 .background(Circle().fill(Color.black.opacity(0.35)))

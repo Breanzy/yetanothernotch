@@ -73,7 +73,8 @@ Install it in Applications before turning on **Launch at login**. macOS records 
 The app is signed ad hoc (no paid Developer ID), so macOS may ask for these permissions again after an update.
 
 ## Notes
-- **Memory.** About 12–15 MB at idle (the Memory column in Activity Monitor), a little more after the panel has been used, and well under 1% CPU. Islet talks to Music and Spotify with raw Apple Events, so the AppleScript engine (~10 MB) is never loaded. The camera, calendar database and image thumbnails load only when used and are released afterward. Glass and Frosted themes are only rendered while the panel is open. Classic is the lightest theme.
+- **Memory.** About 12–15 MB at idle (the Memory column in Activity Monitor), a little more after the panel has been used, and well under 1% CPU. Islet talks to Music and Spotify with raw Apple Events, so the AppleScript engine (~10 MB) is never loaded. The camera, calendar database and image thumbnails load only when used and are released afterward. Glass and Frosted themes are only rendered while the panel is open. Classic is the lightest theme: Apple's Liquid Glass effect alone can take 60–100 MB while the island is open (all of it is released when it closes).
+- **Icon changes crossfade** instead of using macOS's symbol-morph effect (play ⇄ pause, Keep Awake's cup and so on). That effect runs on the GPU, briefly allocated ~50 MB every time an icon changed, and left a few MB behind each time.
 - Apple has locked the private MediaRemote framework for third-party apps, so Islet controls Music and Spotify directly with Apple Events. Other players (browsers, etc.) are not shown.
 - The Command Line Tools SDK doesn't include SwiftUI's `@State` macro plugin, so the views use `@ViewState`, a small wrapper around `State`.
 - `Islet --snapshot <dir>` renders the panel states to PNG files for checking the layout.

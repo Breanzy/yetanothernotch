@@ -255,7 +255,7 @@ struct MirrorTile: View {
 
     private func label(_ symbol: String, _ text: String) -> some View {
         VStack(spacing: 6) {
-            Image(systemName: symbol)
+            SymbolImage(symbol)
                 .font(.system(size: 22, weight: .medium))
             Text(text)
                 .font(.system(size: 11, weight: .medium))

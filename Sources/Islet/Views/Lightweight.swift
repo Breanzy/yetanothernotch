@@ -79,3 +79,52 @@ enum IconCache {
         return image
     }
 }
+
+/// A small round icon button that opens a regular macOS menu.
+///
+/// SwiftUI's `Menu` is a native AppKit control. Whenever anything around it animated (a tile
+/// turning on, the island closing), SwiftUI rendered it into large temporary images: ~50 MB
+/// spikes. This is plain SwiftUI and builds the menu only when it's clicked.
+struct MenuIconButton: View {
+    let symbol: String
+    let help: String
+    let makeMenu: () -> NSMenu
+    @ViewState private var hovering = false
+
+    var body: some View {
+        Button {
+            let menu = makeMenu()
+            let location = NSEvent.mouseLocation
+            // After the click finishes, so the button doesn't stay pressed while the menu is open.
+            DispatchQueue.main.async { menu.popUp(positioning: nil, at: location, in: nil) }
+        } label: {
+            Image(systemName: symbol)
+                .font(.system(size: 10, weight: .bold))
+                .frame(width: 24, height: 24)
+                .background(Circle().fill(Color.white.opacity(hovering ? 0.2 : 0.12)))
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .hoverState($hovering)
+        .help(help)
+    }
+}
+
+/// An SF Symbol that crossfades when it changes.
+///
+/// Swapping a plain `Image(systemName:)` inside an animation makes macOS morph one symbol into
+/// the other with its Metal-based symbol effect, which allocates ~50 MB for about a second, and
+/// part of that is never handed back. A crossfade looks almost the same and costs nothing.
+struct SymbolImage: View {
+    let name: String
+
+    init(_ name: String) { self.name = name }
+
+    var body: some View {
+        ZStack {
+            Image(systemName: name)
+                .id(name)
+                .transition(.opacity)
+        }
+    }
+}

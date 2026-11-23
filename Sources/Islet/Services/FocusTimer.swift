@@ -198,32 +198,25 @@ struct TimerTile: View {
                             withAnimation(.snappy) { timer.reset() }
                         }
                     }
-                    Menu {
-                        Section("Start") {
-                            ForEach(FocusTimer.presets, id: \.self) { length in
-                                Button(FocusTimer.label(for: length)) { timer.start(length) }
-                            }
+                    MenuIconButton(symbol: "clock", help: "Timer lengths") { [timer] in
+                        let menu = NSMenu()
+                        menu.addItem(.sectionHeader(title: "Start"))
+                        for length in FocusTimer.presets {
+                            menu.addItem(ClosureMenuItem(FocusTimer.label(for: length)) { timer.start(length) })
                         }
                         if timer.isActive {
-                            Button("Add 5 min") { timer.add(minutes: 5) }
+                            menu.addItem(.separator())
+                            menu.addItem(ClosureMenuItem("Add 5 min") { timer.add(minutes: 5) })
                         }
-                        Section("Default length") {
-                            Picker("Default length", selection: $timer.defaultLength) {
-                                ForEach(FocusTimer.presets, id: \.self) { Text(FocusTimer.label(for: $0)).tag($0) }
-                            }
-                            .pickerStyle(.inline)
-                            .labelsHidden()
+                        menu.addItem(.separator())
+                        menu.addItem(.sectionHeader(title: "Default length"))
+                        for length in FocusTimer.presets {
+                            let item = ClosureMenuItem(FocusTimer.label(for: length)) { timer.defaultLength = length }
+                            item.state = timer.defaultLength == length ? .on : .off
+                            menu.addItem(item)
                         }
-                    } label: {
-                        Image(systemName: "clock")
-                            .font(.system(size: 10, weight: .bold))
+                        return menu
                     }
-                    .menuStyle(.borderlessButton)
-                    .menuIndicator(.hidden)
-                    .fixedSize()
-                    .frame(width: 24, height: 24)
-                    .background(Circle().fill(Color.white.opacity(0.12)))
-                    .help("Timer lengths")
                 }
             }
         }
@@ -232,7 +225,7 @@ struct TimerTile: View {
 
     private func roundButton(_ symbol: String, help: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Image(systemName: symbol)
+            SymbolImage(symbol) // play ⇄ pause crossfades (see SymbolImage)
                 .font(.system(size: 10, weight: .bold))
                 .frame(width: 24, height: 24)
                 .background(Circle().fill(Color.white.opacity(0.12)))

@@ -107,7 +107,7 @@ struct AwakeTile: View {
                                  : Color.white.opacity(hovering ? 0.12 : 0.07))
 
             VStack(spacing: 5) {
-                Image(systemName: awake.isOn ? "cup.and.heat.waves.fill" : "cup.and.saucer")
+                SymbolImage(awake.isOn ? "cup.and.heat.waves.fill" : "cup.and.saucer")
                     .font(.system(size: 22, weight: .medium))
                     .foregroundStyle(awake.isOn ? Color.orange : .white.opacity(0.6))
                     .frame(height: 28)
@@ -119,24 +119,17 @@ struct AwakeTile: View {
                         .font(.system(size: 9.5, weight: .medium).monospacedDigit())
                         .foregroundStyle(.white.opacity(0.5))
                 }
-                Menu {
-                    ForEach(Array(AwakeController.durations.enumerated()), id: \.offset) { _, duration in
-                        Button(AwakeController.label(for: duration)) { awake.start(for: duration) }
+                MenuIconButton(symbol: "clock", help: "Keep awake for…") { [awake] in
+                    let menu = NSMenu()
+                    for duration in AwakeController.durations {
+                        menu.addItem(ClosureMenuItem(AwakeController.label(for: duration)) { awake.start(for: duration) })
                     }
                     if awake.isOn {
-                        Divider()
-                        Button("Turn Off") { awake.stop() }
+                        menu.addItem(.separator())
+                        menu.addItem(ClosureMenuItem("Turn Off") { awake.stop() })
                     }
-                } label: {
-                    Image(systemName: "clock")
-                        .font(.system(size: 10, weight: .bold))
+                    return menu
                 }
-                .menuStyle(.borderlessButton)
-                .menuIndicator(.hidden)
-                .fixedSize()
-                .frame(width: 24, height: 24)
-                .background(Circle().fill(Color.white.opacity(0.12)))
-                .help("Keep awake for…")
             }
         }
         .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))

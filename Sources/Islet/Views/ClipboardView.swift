@@ -64,7 +64,7 @@ struct ClipboardView: View {
 
     private var emptyState: some View {
         VStack(spacing: 6) {
-            Image(systemName: clipboard.query.isEmpty ? "doc.on.clipboard" : "magnifyingglass")
+            SymbolImage(clipboard.query.isEmpty ? "doc.on.clipboard" : "magnifyingglass")
                 .font(.system(size: 22))
             Text(clipboard.query.isEmpty
                  ? "Copy something and it shows up here"
