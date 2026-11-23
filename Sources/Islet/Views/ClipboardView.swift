@@ -79,7 +79,7 @@ struct ClipboardView: View {
     private var controls: some View {
         HStack(spacing: 4) {
             FooterButton(title: "Clear", tint: .white) {
-                withAnimation { clipboard.clearUnpinned() }
+                withAnimation(Animation.default.scaled) { clipboard.clearUnpinned() }
             }
             .help("Remove everything except pinned items (\(clipboard.items.count) items now)")
             EnlargeButton()
@@ -226,7 +226,7 @@ struct ClipRow: View, Equatable {
             Divider()
             Button("Delete") { store.delete(item) }
         }
-        .animation(.easeOut(duration: 0.15), value: copied)
+        .animation(Animation.easeOut(duration: 0.15).scaled, value: copied)
     }
 }
 

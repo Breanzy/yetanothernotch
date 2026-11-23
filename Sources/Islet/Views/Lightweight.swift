@@ -17,7 +17,7 @@ struct MiniSwitch: View {
         }
         .frame(width: 30, height: 18)
         .contentShape(Capsule())
-        .onTapGesture { withAnimation(.snappy(duration: 0.15)) { isOn.toggle() } }
+        .onTapGesture { withAnimation(Animation.snappy(duration: 0.15).scaled) { isOn.toggle() } }
         .accessibilityAddTraits(.isButton)
         .accessibilityValue(isOn ? "On" : "Off")
     }

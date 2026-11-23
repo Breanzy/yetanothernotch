@@ -184,11 +184,11 @@ struct NotchBackground: View {
                     // Only the fade gets its own timing. A plain `.animation(_:value:)` here also
                     // re-timed the background's *size*, so it grew slower than the island's
                     // content and outline — it looked like two notches opening at once.
-                    .animation(.easeInOut(duration: 0.3)) { $0.opacity(themed ? 1 : 0) }
+                    .animation(Animation.easeInOut(duration: 0.3).scaled) { $0.opacity(themed ? 1 : 0) }
                     .transition(.identity)
             }
             shape.fill(Color.black)
-                .animation(.easeInOut(duration: 0.3)) { $0.opacity(themed ? 0 : 1) }
+                .animation(Animation.easeInOut(duration: 0.3).scaled) { $0.opacity(themed ? 0 : 1) }
         }
     }
 }
@@ -205,7 +205,7 @@ struct ThemesView: View {
             HStack(spacing: 8) {
                 ForEach(NotchTheme.allCases) { theme in
                     ThemeCard(theme: theme, tint: tint, selected: themes.theme == theme) {
-                        withAnimation(.easeInOut(duration: 0.3)) { themes.theme = theme }
+                        withAnimation(Animation.easeInOut(duration: 0.3).scaled) { themes.theme = theme }
                     }
                 }
             }
@@ -215,7 +215,7 @@ struct ThemesView: View {
                     .foregroundStyle(.white.opacity(themes.theme.usesTint ? 0.7 : 0.35))
                 ForEach(ThemeTint.allCases) { option in
                     TintDot(option: option, albumAccent: media.accent, selected: themes.tint == option) {
-                        withAnimation { themes.tint = option }
+                        withAnimation(Animation.default.scaled) { themes.tint = option }
                     }
                 }
                 Spacer()

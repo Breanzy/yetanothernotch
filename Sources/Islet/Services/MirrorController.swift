@@ -249,7 +249,7 @@ struct MirrorTile: View {
             EnlargeButton(onEnlarge: { if !mirror.isActive { mirror.start() } })
                 .padding(6)
         }
-        .animation(.easeInOut(duration: 0.25), value: mirror.state)
+        .animation(Animation.easeInOut(duration: 0.25).scaled, value: mirror.state)
         .help(mirror.isActive ? "Turn off mirror" : "Use your camera as a mirror")
     }
 
@@ -303,7 +303,7 @@ struct MirrorLarge: View {
         .clipShape(shape)
         .overlay(alignment: .topTrailing) { EnlargeButton().padding(8) }
         .onAppear { if !mirror.isActive { mirror.start() } }
-        .animation(.easeInOut(duration: 0.25), value: mirror.state)
+        .animation(Animation.easeInOut(duration: 0.25).scaled, value: mirror.state)
     }
 }
 

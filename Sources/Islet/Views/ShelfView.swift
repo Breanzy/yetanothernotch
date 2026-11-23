@@ -81,7 +81,7 @@ struct ShelfView: View {
                 .fill(Color.white.opacity(vm.isDropTargeted ? 0.08 : 0.04))
         )
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .animation(.snappy(duration: 0.15), value: shelf.selection.isEmpty)
+        .animation(Animation.snappy(duration: 0.15).scaled, value: shelf.selection.isEmpty)
     }
 
     private var marqueeGesture: some Gesture {
@@ -132,9 +132,9 @@ private struct SelectionBar: View {
             Text("\(shelf.selection.count) selected")
                 .font(.system(size: 10, weight: .semibold))
                 .padding(.leading, 6)
-            SmallButton(title: "Move to Trash") { withAnimation { shelf.trash(shelf.selection) } }
+            SmallButton(title: "Move to Trash") { withAnimation(Animation.default.scaled) { shelf.trash(shelf.selection) } }
                 .help("Move the selected files to the Trash (⌫)")
-            SmallButton(title: "Remove") { withAnimation { shelf.remove(shelf.selection) } }
+            SmallButton(title: "Remove") { withAnimation(Animation.default.scaled) { shelf.remove(shelf.selection) } }
                 .help("Take them off the shelf. Your own files go back where they came from.")
             SmallButton(title: "AirDrop") { shelf.airDrop(shelf.selectedItems.map(\.url)) }
         }
@@ -177,7 +177,7 @@ struct ShelfItemView: View {
         .overlay(ShelfItemInteraction(itemID: item.id, store: shelf))
         .overlay(alignment: .topTrailing) {
             if hovering && !selected {
-                Button { withAnimation { shelf.remove([item.id]) } } label: {
+                Button { withAnimation(Animation.default.scaled) { shelf.remove([item.id]) } } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 13))
                         .symbolRenderingMode(.palette)

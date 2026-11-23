@@ -27,8 +27,8 @@ struct NotchRootView: View {
                         .transition(.asymmetric(
                             // Fade only — the notch shape itself provides the growth, so the
                             // content shouldn't scale on top of it (that read as two things expanding).
-                            insertion: .opacity.animation(.easeOut(duration: 0.15).delay(0.05)),
-                            removal: .opacity.animation(.easeIn(duration: 0.07))
+                            insertion: .opacity.animation(Animation.easeOut(duration: 0.15).delay(0.05).scaled),
+                            removal: .opacity.animation(Animation.easeIn(duration: 0.07).scaled)
                         ))
                 } else if vm.showLiveActivity {
                     CollapsedLiveActivity()
@@ -48,7 +48,7 @@ struct NotchRootView: View {
         }
         .contentShape(shape)
         .animation(vm.isExpanded ? NotchViewModel.openAnimation : NotchViewModel.closeAnimation, value: vm.isExpanded)
-        .animation(.spring(response: 0.32, dampingFraction: 0.78), value: vm.showLiveActivity)
+        .animation(Animation.spring(response: 0.32, dampingFraction: 0.78).scaled, value: vm.showLiveActivity)
     }
 }
 
@@ -112,7 +112,7 @@ struct TabButton: View {
     var body: some View {
         let selected = vm.tab == tab
         Button {
-            withAnimation(.snappy(duration: 0.15)) { vm.tab = tab }
+            withAnimation(Animation.snappy(duration: 0.15).scaled) { vm.tab = tab }
         } label: {
             Image(systemName: symbol)
                 .font(.system(size: 12, weight: .semibold))
@@ -150,7 +150,7 @@ struct HomeView: View {
                     .font(.system(size: 12, weight: .semibold))
                 PillButton(title: "Choose widgets…") {
                     vm.settingsSection = .layout
-                    withAnimation(.snappy) { vm.tab = .settings }
+                    withAnimation(Animation.snappy.scaled) { vm.tab = .settings }
                 }
             }
             .foregroundStyle(.white.opacity(0.7))

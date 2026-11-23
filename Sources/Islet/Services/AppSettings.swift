@@ -60,6 +60,17 @@ final class AppSettings: ObservableObject {
     static let closeDelayOptions: [(label: String, value: Double)] =
         [("Instant", 0), ("0.3s", 0.3), ("0.6s", 0.6), ("1s", 1), ("2s", 2)]
 
+    /// Speed of every animation (opening/closing the island, tabs, tiles…). 0 = Instant:
+    /// no animation, things just appear. 1 = the normal speed.
+    @Published var animationSpeed: Double {
+        didSet {
+            UserDefaults.standard.set(animationSpeed, forKey: "motion.speed")
+            Motion.speed = animationSpeed
+        }
+    }
+    static let animationSpeedOptions: [(label: String, value: Double)] =
+        [("Instant", 0), ("Faster", 3), ("Fast", 1.75), ("Normal", 1), ("Slow", 0.7)]
+
     // Auto-clear: shelf after 3 days, clipboard after 1 week by default.
     /// Shelf behaviour (see ShelfPrefs for the keys the store reads).
     @Published var moveFilesIntoShelf: Bool {
@@ -97,6 +108,9 @@ final class AppSettings: ObservableObject {
         removeAfterDragOut = ShelfPrefs.removeAfterDragOut
         openDelay = d.double(forKey: "hover.openDelay")
         closeDelay = d.double(forKey: "hover.closeDelay")
+        let speed = d.double(forKey: "motion.speed")
+        animationSpeed = speed
+        Motion.speed = speed
         shelfRetention = Retention(rawValue: d.integer(forKey: "retention.shelf")) ?? .threeDays
         clipboardRetention = Retention(rawValue: d.integer(forKey: "retention.clipboard")) ?? .oneWeek
         refreshLoginStatus()
@@ -152,6 +166,7 @@ enum Settings {
             "layout.shelfTab": true, "layout.clipboardTab": true,
             "layout.battery": false, "layout.calendar": false,
             "layout.nowPlaying": true, "layout.timer": true, "layout.mirror": true, "layout.awake": true,
+            "motion.speed": 1.0,
             "retention.shelf": Retention.threeDays.rawValue,
             "retention.clipboard": Retention.oneWeek.rawValue,
         ])
@@ -203,7 +218,7 @@ private struct SectionPill: View {
     var body: some View {
         let selected = vm.settingsSection == section
         Button {
-            withAnimation(.snappy(duration: 0.15)) { vm.settingsSection = section }
+            withAnimation(Animation.snappy(duration: 0.15).scaled) { vm.settingsSection = section }
         } label: {
             HStack(spacing: 5) {
                 Image(systemName: section.symbol).font(.system(size: 10, weight: .semibold))
@@ -335,6 +350,9 @@ private struct BehaviorSettings: View {
             ChoiceRow(icon: "rectangle.portrait.and.arrow.right", title: "Close delay",
                       help: "How long after the pointer leaves before the island closes.",
                       options: AppSettings.closeDelayOptions, selection: $settings.closeDelay)
+            ChoiceRow(icon: "hare", title: "Animations",
+                      help: "How fast the island opens and closes, and every other animation. Instant: no animation at all, it just appears.",
+                      options: AppSettings.animationSpeedOptions, selection: $settings.animationSpeed)
             SwitchRow(
                 icon: "hand.tap", title: "Haptic feedback",
                 help: "A tap on the trackpad when the notch opens and when a timer finishes.",
@@ -365,7 +383,7 @@ private struct ChoiceRow<Value: Hashable>: View {
                     let option = options[i]
                     let selected = option.value == selection
                     Button {
-                        withAnimation(.snappy(duration: 0.15)) { selection = option.value }
+                        withAnimation(Animation.snappy(duration: 0.15).scaled) { selection = option.value }
                     } label: {
                         Text(option.label)
                             .font(.system(size: 10, weight: selected ? .semibold : .medium))
@@ -471,7 +489,7 @@ private struct ClipboardSettings: View {
                     Spacer(minLength: 6)
                     let count = clipboard.items.filter { !$0.pinned }.count
                     SmallButton(title: count > 0 ? "Clear (\(count))" : "Clear") {
-                        withAnimation { clipboard.clearUnpinned() }
+                        withAnimation(Animation.default.scaled) { clipboard.clearUnpinned() }
                     }
                     .disabled(count == 0)
                     .opacity(count == 0 ? 0.5 : 1)

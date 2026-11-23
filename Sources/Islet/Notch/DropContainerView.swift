@@ -93,7 +93,7 @@ final class DropContainerView: NSView {
                 shelf.add(urls.filter(DropIngest.isOwned))
                 shelf.airDrop(urls)
             } else {
-                withAnimation(.snappy) {
+                withAnimation(Animation.snappy.scaled) {
                     shelf.add(urls)
                     vm.tab = .shelf
                 }

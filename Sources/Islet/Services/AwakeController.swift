@@ -134,8 +134,8 @@ struct AwakeTile: View {
         }
         .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .hoverState($hovering)
-        .onTapGesture { withAnimation(.snappy(duration: 0.2)) { awake.toggle() } }
-        .animation(.snappy(duration: 0.2), value: awake.isOn)
+        .onTapGesture { withAnimation(Animation.snappy(duration: 0.2).scaled) { awake.toggle() } }
+        .animation(Animation.snappy(duration: 0.2).scaled, value: awake.isOn)
         .help(awake.isOn ? "Click to let your Mac sleep again"
                          : "Click to keep your Mac awake (no sleep, screen saver or auto-lock)")
     }

@@ -186,16 +186,16 @@ struct TimerTile: View {
                     .frame(width: 62, height: 62)
                 }
                 .contentShape(Circle())
-                .onTapGesture { withAnimation(.snappy) { timer.toggle() } }
+                .onTapGesture { withAnimation(Animation.snappy.scaled) { timer.toggle() } }
                 .help(primaryHelp)
 
                 HStack(spacing: 6) {
                     roundButton(timer.isRunning ? "pause.fill" : "play.fill", help: primaryHelp) {
-                        withAnimation(.snappy) { timer.toggle() }
+                        withAnimation(Animation.snappy.scaled) { timer.toggle() }
                     }
                     if timer.isActive || timer.phase == .finished {
                         roundButton("arrow.counterclockwise", help: "Reset") {
-                            withAnimation(.snappy) { timer.reset() }
+                            withAnimation(Animation.snappy.scaled) { timer.reset() }
                         }
                     }
                     MenuIconButton(symbol: "clock", help: "Timer lengths") { [timer] in

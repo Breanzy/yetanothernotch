@@ -95,8 +95,9 @@ final class NotchViewModel: ObservableObject {
     static let collapsedEar: CGFloat = 6
     static let expandedEar: CGFloat = 14
 
-    static let openAnimation = Animation.spring(response: 0.3, dampingFraction: 0.82)
-    static let closeAnimation = Animation.spring(response: 0.24, dampingFraction: 0.95)
+    /// Open/close springs at the user's animation speed (nil when set to Instant).
+    static var openAnimation: Animation? { Animation.spring(response: 0.3, dampingFraction: 0.82).scaled }
+    static var closeAnimation: Animation? { Animation.spring(response: 0.24, dampingFraction: 0.95).scaled }
 
     let media: MediaController
     let calendar: CalendarService
@@ -120,7 +121,7 @@ final class NotchViewModel: ObservableObject {
         Publishers.CombineLatest(playing, timing)
             .receive(on: RunLoop.main)
             .sink { [weak self] playing, timing in
-                withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) {
+                withAnimation(Animation.spring(response: 0.32, dampingFraction: 0.78).scaled) {
                     self?.showLiveActivity = playing || timing
                     self?.liveInset = timing ? 64 : 40
                 }
