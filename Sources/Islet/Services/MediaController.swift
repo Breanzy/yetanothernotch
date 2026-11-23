@@ -54,26 +54,52 @@ final class MediaController: ObservableObject {
     private var lastSource: MediaSource?
     private var pids: [MediaSource: pid_t] = [:]
 
-    func start() {
-        poll()
-        setPanelOpen(false)
+    /// Off when Now Playing is switched off in Settings → Layout: no polling, no Apple Events,
+    /// no artwork in memory, and nothing music-related in the closed notch.
+    private(set) var isEnabled = false
+    private var panelOpen = false
+
+    func start(enabled: Bool) {
+        setEnabled(enabled)
+    }
+
+    func setEnabled(_ enabled: Bool) {
+        guard enabled != isEnabled else { return }
+        isEnabled = enabled
+        if enabled {
+            schedule()
+            poll()
+        } else {
+            timer?.invalidate()
+            timer = nil
+            pids = [:]
+            lastSource = nil
+            apply(nil) // drops the track, artwork and accent color
+        }
     }
 
     /// Poll every second while the panel is open (live progress), every 3 s while closed —
     /// the closed notch only needs play state and artwork, and progress is interpolated locally.
     func setPanelOpen(_ open: Bool) {
-        timer?.invalidate()
-        let t = Timer(timeInterval: open ? 1.0 : 3.0, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated { self?.poll() }
-        }
-        t.tolerance = open ? 0.1 : 0.5
-        RunLoop.main.add(t, forMode: .common)
-        timer = t
+        panelOpen = open
+        schedule()
         if open { poll() }
     }
 
+    private func schedule() {
+        timer?.invalidate()
+        timer = nil
+        guard isEnabled else { return }
+        let t = Timer(timeInterval: panelOpen ? 1.0 : 3.0, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.poll() }
+        }
+        t.tolerance = panelOpen ? 0.1 : 0.5
+        RunLoop.main.add(t, forMode: .common)
+        timer = t
+    }
+
     func poll() {
-        guard !isPolling else { return }
+        guard isEnabled, !isPolling else { return }
         // Address players by process ID: an Apple Event sent by bundle ID launches the app if it
         // isn't running, which would reopen Spotify/Music right after you quit them.
         var targets: [(MediaSource, pid_t)] = []
@@ -95,8 +121,11 @@ final class MediaController: ObservableObject {
                 ?? results.first
             DispatchQueue.main.async {
                 MainActor.assumeIsolated {
-                    self?.isPolling = false
-                    self?.apply(best)
+                    guard let self else { return }
+                    self.isPolling = false
+                    // Switched off while this check was running: don't bring the track back.
+                    guard self.isEnabled else { return }
+                    self.apply(best)
                 }
             }
         }

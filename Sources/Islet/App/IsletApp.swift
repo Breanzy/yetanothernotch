@@ -29,11 +29,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var settings: AppSettings { viewModel.settings }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Features switched off in Settings → Layout don't run at all (see the sinks below).
+        if !settings.showClipboardTab && viewModel.tab == .clipboard { viewModel.tab = .home }
         notchController = NotchWindowController(viewModel: viewModel)
-        media.start()
-        viewModel.clipboard.start()
+        media.start(enabled: settings.showNowPlaying)
+        viewModel.clipboard.setActive(settings.showClipboardTab)
         calendar.refreshAuthorization()
         setupStatusItem()
+
+        // Now Playing off: stop checking Music/Spotify and clear the closed-notch music activity.
+        settings.$showNowPlaying
+            .dropFirst()
+            .sink { [weak self] on in self?.media.setEnabled(on) }
+            .store(in: &cancellables)
+
+        // Clipboard off: stop recording and unload history (kept on disk for when it's back on).
+        settings.$showClipboardTab
+            .dropFirst()
+            .sink { [weak self] on in
+                guard let self else { return }
+                if !on && self.viewModel.tab == .clipboard { self.viewModel.tab = .home }
+                self.viewModel.clipboard.setActive(on)
+                if on { self.viewModel.clipboard.purge(olderThanDays: self.settings.clipboardRetention.days) }
+            }
+            .store(in: &cancellables)
 
         // Show/hide the menu bar icon whenever the setting changes.
         settings.$showMenuBarIcon
@@ -174,7 +193,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let clipItem = NSMenuItem(title: "Clipboard History", action: nil, keyEquivalent: "")
         let clipMenu = NSMenu()
         let clips = viewModel.clipboard.items.prefix(10)
-        if clips.isEmpty {
+        if !viewModel.clipboard.isActive {
+            clipMenu.addItem(withTitle: "History is off (Settings → Layout → Clipboard)", action: nil, keyEquivalent: "").isEnabled = false
+        } else if clips.isEmpty {
             clipMenu.addItem(withTitle: "Nothing copied yet", action: nil, keyEquivalent: "").isEnabled = false
         }
         for clip in clips {
@@ -191,10 +212,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             item.representedObject = clip.id
             clipMenu.addItem(item)
         }
-        clipMenu.addItem(.separator())
-        let clearClips = NSMenuItem(title: "Clear History", action: #selector(clearClipboard), keyEquivalent: "")
-        clearClips.target = self
-        clipMenu.addItem(clearClips)
+        if viewModel.clipboard.isActive {
+            clipMenu.addItem(.separator())
+            let clearClips = NSMenuItem(title: "Clear History", action: #selector(clearClipboard), keyEquivalent: "")
+            clearClips.target = self
+            clipMenu.addItem(clearClips)
+        }
         clipItem.submenu = clipMenu
         menu.addItem(clipItem)
         menu.addItem(.separator())

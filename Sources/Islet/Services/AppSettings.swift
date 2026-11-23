@@ -393,7 +393,9 @@ private struct LayoutSettings: View {
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
             VStack(spacing: 3) {
-                SwitchRow(icon: "music.note", title: "Now Playing", help: "Home widget", isOn: $settings.showNowPlaying)
+                SwitchRow(icon: "music.note", title: "Now Playing",
+                          help: "Home widget, plus album art and equalizer in the closed notch. Off: Islet stops checking Music and Spotify entirely.",
+                          isOn: $settings.showNowPlaying)
                 SwitchRow(icon: "calendar", title: "Calendar", help: "Home widget", isOn: $settings.showCalendar)
                 SwitchRow(icon: "timer", title: "Focus Timer", help: "Home widget", isOn: $settings.showTimer)
             }
@@ -403,7 +405,9 @@ private struct LayoutSettings: View {
             }
             VStack(spacing: 3) {
                 SwitchRow(icon: "tray.full", title: "Shelf tab", help: "Top bar", isOn: $settings.showShelfTab)
-                SwitchRow(icon: "doc.on.clipboard", title: "Clipboard", help: "Top bar tab", isOn: $settings.showClipboardTab)
+                SwitchRow(icon: "doc.on.clipboard", title: "Clipboard",
+                          help: "Top bar tab and clipboard history. Off: nothing is recorded and history is unloaded (it's kept on disk for when you turn it back on).",
+                          isOn: $settings.showClipboardTab)
                 SwitchRow(icon: "battery.75percent", title: "Battery", help: "Top bar", isOn: $settings.showBattery)
             }
         }
@@ -441,30 +445,39 @@ private struct ClipboardSettings: View {
 
     var body: some View {
         VStack(spacing: 3) {
+            if !settings.showClipboardTab {
+                SwitchRow(icon: "pause.circle", title: "Recording is off",
+                          note: "Nothing you copy is saved. Turn it on to record and see your history.",
+                          noteIsWarning: true,
+                          help: "Same as the Clipboard switch in Layout.",
+                          isOn: $settings.showClipboardTab)
+            }
             ChoiceRow(icon: "clock.arrow.circlepath", title: "Keep history for",
                       help: "Clipboard items are cleared this long after they were last copied. Pinned items are kept. Checked hourly.",
                       options: Retention.allCases.map { ($0.shortTitle, $0) },
                       selection: $settings.clipboardRetention)
-            HStack(spacing: 8) {
-                Image(systemName: "trash")
-                    .font(.system(size: 10, weight: .semibold))
-                    .frame(width: 20, height: 20)
-                    .background(RoundedRectangle(cornerRadius: 5).fill(Color.white.opacity(0.1)))
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("Clear history").font(.system(size: 12, weight: .medium))
-                    Text("Pinned items are always kept.")
-                        .font(.system(size: 9.5))
-                        .foregroundStyle(.white.opacity(0.45))
+            if settings.showClipboardTab {
+                HStack(spacing: 8) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 10, weight: .semibold))
+                        .frame(width: 20, height: 20)
+                        .background(RoundedRectangle(cornerRadius: 5).fill(Color.white.opacity(0.1)))
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("Clear history").font(.system(size: 12, weight: .medium))
+                        Text("Pinned items are always kept.")
+                            .font(.system(size: 9.5))
+                            .foregroundStyle(.white.opacity(0.45))
+                    }
+                    Spacer(minLength: 6)
+                    let count = clipboard.items.filter { !$0.pinned }.count
+                    SmallButton(title: count > 0 ? "Clear (\(count))" : "Clear") {
+                        withAnimation { clipboard.clearUnpinned() }
+                    }
+                    .disabled(count == 0)
+                    .opacity(count == 0 ? 0.5 : 1)
                 }
-                Spacer(minLength: 6)
-                let count = clipboard.items.filter { !$0.pinned }.count
-                SmallButton(title: count > 0 ? "Clear (\(count))" : "Clear") {
-                    withAnimation { clipboard.clearUnpinned() }
-                }
-                .disabled(count == 0)
-                .opacity(count == 0 ? 0.5 : 1)
+                .frame(height: 30)
             }
-            .frame(height: 30)
         }
     }
 }

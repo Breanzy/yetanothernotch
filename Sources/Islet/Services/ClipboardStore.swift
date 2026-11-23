@@ -128,18 +128,36 @@ final class ClipboardStore: ObservableObject {
     }
 
     init() {
-        UserDefaults.standard.removeObject(forKey: "clipboard.recording") // old pause setting; always records now
-        load()
+        UserDefaults.standard.removeObject(forKey: "clipboard.recording") // old pause setting, replaced by the Layout switch
     }
 
-    func start() {
-        lastChangeCount = NSPasteboard.general.changeCount
-        let t = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated { self?.check() }
+    /// Recording follows the Clipboard switch in Settings → Layout. While off, nothing is
+    /// recorded, the pasteboard isn't checked, and history is unloaded from memory (it stays
+    /// on disk and comes back when you switch it on again).
+    private(set) var isActive = false
+
+    func setActive(_ active: Bool) {
+        guard active != isActive else { return }
+        isActive = active
+        if active {
+            load()
+            // Start from what's on the clipboard now; things copied while off aren't recorded.
+            lastChangeCount = NSPasteboard.general.changeCount
+            let t = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
+                MainActor.assumeIsolated { self?.check() }
+            }
+            t.tolerance = 0.1 // lets macOS batch the wake-ups with other work
+            RunLoop.main.add(t, forMode: .common)
+            timer = t
+        } else {
+            timer?.invalidate()
+            timer = nil
+            stopKeyHandling()
+            query = ""
+            selectedID = nil
+            items = [] // already saved; only memory is cleared
+            purgeThumbnails()
         }
-        t.tolerance = 0.1 // lets macOS batch the wake-ups with other work
-        RunLoop.main.add(t, forMode: .common)
-        timer = t
     }
 
     /// Decodes only a small thumbnail straight from the file (never the full image).
@@ -271,6 +289,7 @@ final class ClipboardStore: ObservableObject {
     // MARK: - Capture
 
     private func check() {
+        guard isActive else { return }
         let pb = NSPasteboard.general
         guard pb.changeCount != lastChangeCount else { return }
         lastChangeCount = pb.changeCount
@@ -322,6 +341,8 @@ final class ClipboardStore: ObservableObject {
                 DispatchQueue.main.async {
                     MainActor.assumeIsolated {
                         guard let self else { return }
+                        // Recording was switched off while the image was being saved.
+                        guard self.isActive else { try? FileManager.default.removeItem(at: url); return }
                         item.imageBytes = bytes
                         item.imageWidth = width
                         item.imageHeight = height
@@ -420,7 +441,7 @@ final class ClipboardStore: ObservableObject {
     /// Removes unpinned items last copied more than `days` days ago. Returns how many were removed.
     @discardableResult
     func purge(olderThanDays days: Int, now: Date = Date()) -> Int {
-        guard days > 0 else { return 0 }
+        guard isActive, days > 0 else { return 0 }
         let cutoff = now.addingTimeInterval(-Double(days) * 86_400)
         let expired = items.filter { !$0.pinned && $0.date < cutoff }
         guard !expired.isEmpty else { return 0 }
@@ -448,6 +469,8 @@ final class ClipboardStore: ObservableObject {
     /// History can be a few MB of text, so encoding and writing happen off the main thread
     /// (in order, on a serial queue) instead of stalling the UI on every copy.
     private func save() {
+        // While off, history isn't in memory; writing would wipe the saved copy.
+        guard isActive else { return }
         let snapshot = items
         let url = fileURL
         Self.saveQueue.async {
